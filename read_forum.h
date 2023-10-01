@@ -42,9 +42,9 @@ private:
 
 void Forum::get_nick_and_voice () {
   strcpy (s, txt.back().c_str());
-  *strrchr (s, '\n') = '\0';
+  s[strlen (s) - 1] = '\0'; // delete last \n
   char *_nick = s;
-  strcpy (voice, vb.voice_of (_nick));
+  assert (L_VOICE > strlen (vb.voice_of (_nick))); strcpy (voice, vb.voice_of (_nick));
   printf ("\033[1;35m%s of %u (%s)\n\033[1;32m==================================-\033[0m\n", _nick, vb.nicks_n, voice);
   sprintf (buf, "LD_LIBRARY_PATH=/usr/local/lib /usr/local/bin/RHVoice-test -o - -p %s | %s > /dev/null 2>&1", voice, player);
   if (pipe) { pclose (pipe); pipe = NULL; }
@@ -77,18 +77,28 @@ void Forum::find_str_with_first (const char *head) {
 }
 
 void Forum::find_str_with_date() {
-  do { txt.push_back (gets()); } while (!is_date_str());
+  do { down(); } while (!is_date_str());
 }
 
 bool Forum::is_date_str() {
   char *p;
   int dd, yy, hh, mm;
-  p = strtok (s, " "); dd = atoi (p); if (!(dd >= 1 && dd <= 31)) return false;
-  p = strtok (NULL, " "); // get month
-  p = strtok (NULL, " "); yy = atoi (p); if (!(yy >= 1980 && yy <= 2100)) return false;
-  p = strtok (NULL, " "); // в
-  p = strtok (NULL, ":"); hh = atoi (p); if (!(hh >= 0 && hh <= 23)) return false;
-  p = strtok (NULL, "\n"); mm = atoi (p); if (!(mm >= 0 && mm <= 59)) return false;
+  if (!(p = strtok (s, " "))) return false;
+  dd = atoi (p); if (!(dd >= 1 && dd <= 31)) return false;
+
+  if (!(p = strtok (NULL, " "))) return false; // get month
+
+  if (!(p = strtok (NULL, " "))) return false;
+  yy = atoi (p); if (!(yy >= 1980 && yy <= 2100)) return false;
+
+  if (!(p = strtok (NULL, " "))) return false; // в
+  
+  if (!(p = strtok (NULL, ":"))) return false;
+  hh = atoi (p); if (!(hh >= 0 && hh <= 23)) return false;
+
+  if (!(p = strtok (NULL, "\n"))) return false;
+  mm = atoi (p); if (!(mm >= 0 && mm <= 59)) return false;
+
   return true;
 }
 
@@ -107,8 +117,8 @@ void Forum::Erase_http() {
   char *p1, *p2;
   if (p1 = strstr (s, "http")) {
     *p1 = '\0'; strcpy (buf, s); strcat (buf, "(ссылка)\n");
-    if (p2 = strchr (p1, ' ')) {
-      buf[strlen (buf) - 1] = '\0';
+    if (p2 = strchr (p1 + 1, ' ')) {
+      buf[strlen (buf) - 1] = '\0';  // delete last \n
       strcat (buf, p2);
     }
     strcpy (s, buf);

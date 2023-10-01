@@ -4,8 +4,6 @@
 
 int main ()
 {
-  int i;
-  char *p, s[L];
   Forum f;
 
   f.find_str_with_date(); f.txt.clear();
