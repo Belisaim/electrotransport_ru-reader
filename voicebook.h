@@ -14,6 +14,7 @@ const char *Voice[Voices_n] = {
   "victoria -r 125", "evgeniy-rus -r 130"
 };
 
+//-------------------------------------------
 class VoiceBook {
   char nick[NICKS_N][L_NICK];
   const char *voice[NICKS_N];
@@ -23,6 +24,7 @@ public:
   const char *voice_of (const char *_nick);
 };
 
+///////////////////////////////////////////////////////
 const char *VoiceBook::voice_of (const char *_nick) {
   for (int i = 0; i < nicks_n; i++)
     if (strcmp (nick[i], _nick) == 0)
