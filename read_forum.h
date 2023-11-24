@@ -132,11 +132,12 @@ void Forum::Erase_User() {
 
 ///////////////////////////////////////////////////////////////
 void Forum::Erase_http() {
-  if (char *p1 = strstr (s, "http")) {
+char *p1, *p2;
+  while (p1 = strstr (s, "http")) {
     *p1 = '\0';
     strcpy (buf, s);
     strcat (buf, "(ссылка)\n");
-    if (char *p2 = strchr (p1 + 1, ' ')) {
+    if (p2 = strchr (p1 + 1, ' ')) {
       buf[strlen (buf) - 1] = '\0';  // delete last \n
       strcat (buf, p2);
     }
