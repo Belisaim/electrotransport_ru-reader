@@ -20,12 +20,16 @@ class Forum {
   char voice[L_VOICE];
   VoiceBook vb;
   FILE *pipe;
+  string nick, next_nick;
+  vector <string> no_doubles;
 public:
+  bool the_end;
   vector <string> txt;
 
-  Forum () { pipe = NULL; }
+  Forum () { pipe = NULL; the_end = false; nick = next_nick = ""; }
   char *gets();
-  void get_nick_and_voice ();
+  void get_nick ();
+  void get_voice();
   void say ();
   void down() { txt.push_back (gets()); }
   void   up() { txt.pop_back(); }
@@ -36,6 +40,7 @@ private:
   bool is_date_str();
   void Erase_User();
   void Erase_http();
+  void Erase_Ponravilos();
   void Erase_Dobavleno();
   void Erase_Poslednee_redaktirovanie();
   void Erase_Citata ();
@@ -43,19 +48,28 @@ private:
 
 ////////////////////////////////////////////////////
 char *Forum::gets() {
-  *s = '\0'; fgets (s, L, stdin);
-  if (strstr (s, "Перейти в") == s) { fprintf (stderr, "\033[1;33mКонец.\033[0m\n"); exit (0); }
+  *s = '\0';
+  if (feof (stdin)) {
+    fprintf (stderr, "Неожиданно достигнут конец файла.\n");
+    exit (0);
+  }
+  fgets (s, L, stdin);
   return s;
 }
 
 ////////////////////////////////////////////////////
-void Forum::get_nick_and_voice () {
-  strcpy (s, txt.back().c_str());
-  s[strlen (s) - 1] = '\0'; // delete last \n
-  char *_nick = s;
-  assert (L_VOICE > strlen (vb.voice_of (_nick)));
-  strcpy (voice, vb.voice_of (_nick));
-  printf ("\033[1;35m%s of %u (%s)\n\033[1;32m==================================-\033[0m\n", _nick, vb.nicks_n, voice);
+void Forum::get_nick () {
+  string *pNick = (nick == "")? &nick: &next_nick;
+  (*pNick) = txt.back();
+  (*pNick)[pNick->length() - 1] = '\0'; // delete last \n
+}
+
+////////////////////////////////////////////////////
+void Forum::get_voice() {
+  string *pNick = (next_nick == "")? &nick: &next_nick;
+  assert (L_VOICE > strlen (vb.voice_of (pNick->c_str())));
+  strcpy (voice, vb.voice_of (pNick->c_str()));
+  printf ("\033[1;35m%s of %u (%s)\n\033[1;32m==================================-\033[0m\n", pNick->c_str(), vb.nicks_n, voice);
   sprintf (buf, "LD_LIBRARY_PATH=/usr/local/lib /usr/local/bin/RHVoice-test -o - -p %s | %s > /dev/null 2>&1", voice, player);
   if (pipe) { pclose (pipe); pipe = NULL; }
   pipe = popen (buf, "w");
@@ -64,14 +78,23 @@ void Forum::get_nick_and_voice () {
 ////////////////////////////////////////////////////
 void Forum::say () {
   Erase_Citata ();
-  int n = txt.size(), i;
+  int n = txt.size(), m, i, j;
   for (i = 0; i < n; i++) {
     strcpy (s, txt[i].c_str());
     Erase_User();
     Erase_http();
+    Erase_Ponravilos();
     Erase_Dobavleno();
     Erase_Poslednee_redaktirovanie();
+    m = no_doubles.size();
+    for (j = 0; j < m; j++)
+      if (no_doubles[j] == s) {
+        printf ("\033[47;30m%s\033[0m", s);
+        s[0] = '\0';
+        break;
+      }
     if (s[0] == '\n' || s[0] == '\0') continue;
+    no_doubles.push_back (s);
     printf ("\033[1;33m--\033[0m %s", s);
     fprintf (pipe, "%s", s);
   }
@@ -84,7 +107,12 @@ void Forum::find_str_with_first (const char *head) {
 
 ///////////////////////////////////////////////////////////////
 void Forum::find_str_with_date() {
-  do { down(); } while (!is_date_str());
+  do {
+    down();
+    if (strstr (s, "Вверх") == s) {
+      the_end = true; return;
+    }
+  } while (!is_date_str());
 }
 
 ///////////////////////////////////////////////////////////////
@@ -143,6 +171,12 @@ char *p1, *p2;
     }
     strcpy (s, buf);
   }
+}
+
+///////////////////////////////////////////////////////////////
+void Forum::Erase_Ponravilos() {
+  if (strstr (s, "    Понравилось") == s) *s = '\0';
+  if (strstr (s, "    💚") == s) *s = '\0';
 }
 
 ///////////////////////////////////////////////////////////////
