@@ -1,8 +1,8 @@
 // voicebook.h
 
 #define NICKS_N 128
-#define L_NICK  32
-#define L_VOICE 16
+#define L_NICK  64
+#define L_VOICE 32
 
 const unsigned Voices_n = 12;
 const char *Voice[Voices_n] = {
